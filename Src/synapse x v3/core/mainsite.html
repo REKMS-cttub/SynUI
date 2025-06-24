@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse UI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 优化后的CSS代码 */
+        :root {
+            --bg-color-darkest: #1e1e1e;
+            --bg-color-dark: #252526;
+            --bg-color-medium: #2d2d2d;
+            --bg-color-light: #3c3c3c;
+            --border-color: #444444;
+            --text-color-primary: #ffffff;
+            --text-color-secondary: #8e8e8e;
+            --accent-color-green: #2c723a;
+            --accent-color-blue: #3a6ea5;
+            --accent-color-red: #e81123;
+            --font-main: 'Segoe UI', 'Roboto', sans-serif;
+            --font-mono: 'Consolas', 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-main), sans-serif;
+            color: var(--text-color-primary);
+            background-color: var(--bg-color-darkest);
+            font-size: 14px;
+            -webkit-user-select: none; /* 添加禁止文本选择 */
+            user-select: none;
+        }
+
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #333, #1a1a1a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .splash-logo {
+            text-align: center;
+            margin-bottom: 40px;
+            transition: all 0.8s ease;
+        }
+
+        .splash-title {
+            font-size: 72px;
+            font-weight: 800;
+            color: var(--text-color-primary);
+            letter-spacing: 3px;
+            text-shadow: 0 0 25px rgba(58, 110, 165, 0.8);
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #4a90e2, #5e5ce6, #bf5af2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease;
+        }
+
+        .splash-version {
+            font-size: 18px;
+            color: var(--text-color-secondary);
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .update-container {
+            max-width: 500px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .update-status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .update-text {
+            font-size: 22px;
+            color: var(--text-color-primary);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .update-progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-bar-large {
+            height: 8px;
+            background: var(--bg-color-medium);
+            border-radius: 4px;
+            overflow: hidden;
+            direction: ltr;
+        }
+
+        .progress-large {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-color-blue);
+            transition: width 0.5s ease;
+            float: left;
+        }
+
+        .progress-text {
+            font-size: 16px;
+            color: var(--text-color-secondary);
+            text-align: center;
+        }
+
+        #splash-screen.minimized {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .app-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .title-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            height: 48px;
+            background-color: var(--bg-color-dark);
+            flex-shrink: 0;
+            -webkit-user-select: none;
+            user-select: none;
+            border-bottom: 1px solid var(--border-color);
+            cursor: default;
+        }
+
+        .title-bar-left, .title-bar-center, .title-bar-right {
+            pointer-events: auto;
+        }
+
+        .title-bar-center .icon {
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .title-bar-left {
+            display: flex;
+            align-items: center;
+            width: 33%;
+        }
+
+        .title-bar-center {
+            flex-grow: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-bar-right {
+            display: flex;
+            align-items: center;
+            width: 33%;
+            justify-content: flex-end;
+        }
+
+        .title-bar .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .title-bar .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 15px;
+            color: var(--text-color-primary);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(58, 110, 165, 0.5);
+        }
+
+        .title-bar .logo-info {
+            display: flex;
+            flex-direction: column;
+            font-size: 10px;
+            color: var(--text-color-secondary);
+        }
+
+        .title-bar .center-icons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .title-bar .icon {
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            transition: color 0.2s;
+            font-size: 16px;
+            z-index: 10;
+        }
+        .title-bar .icon:hover {
+            color: var(--text-color-primary);
+        }
+
+        .title-bar .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .title-bar .window-controls .icon-btn {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .title-bar .window-controls .icon-btn:hover {
+            background-color: var(--bg-color-medium);
+        }
+        .title-bar .window-controls .close-btn:hover {
+            background-color: var(--accent-color-red);
+        }
+
+        .window-controls .minimize-btn {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        .window-controls .maximize-btn {
+            border-radius: 0;
+        }
+        .window-controls .close-btn {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100% - 48px - 40px);
+        }
+
+        .editor-pane {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .tab-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color-darkest);
+            flex-shrink: 0;
+            padding: 5px 5px 0 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: var(--bg-color-medium);
+            margin-right: 4px;
+            cursor: pointer;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            max-width: 220px;
+            min-width: 140px;
+            height: 36px;
+            transition: all 0.2s;
+        }
+
+        .tab-item.active {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-primary);
+            border-bottom: 2px solid var(--accent-color-blue);
+        }
+
+        .tab-item .tab-icon {
+            margin-right: 10px;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .tab-item .tab-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-grow: 1;
+            font-size: 13px;
+        }
+        .tab-item .tab-close {
+            margin-left: 12px;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            font-size: 14px;
+        }
+        .tab-item .tab-close:hover {
+            opacity: 1;
+        }
+        .tab-add {
+            padding: 8px 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            background-color: var(--bg-color-medium);
+            border-radius: 4px;
+            margin-left: 6px;
+            transition: background-color 0.2s;
+        }
+        .tab-add:hover {
+            background-color: var(--bg-color-light);
+        }
+        .title-bar .logo-text,
+        .title-bar .logo-info,
+        .injection-status,
+        .notification,
+        .file-browser-title,
+        .settings-header h2 {
+            cursor: default !important;
+        }
+        .editor-container, .console-content, .file-name, .tab-title, .breadcrumb-item {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .editor-container {
+            flex-grow: 1;
+            width: 100%;
+            display: none;
+        }
+        .editor-container.active {
+            display: block;
+        }
+
+        .resizer {
+            width: 4px;
+            background-color: var(--border-color);
+            cursor: col-resize;
+            flex-shrink: 0;
+        }
+
+        .sidebar-pane {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color-dark);
+            padding: 12px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-search {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color-medium);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .sidebar-search input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-color-primary);
+            padding: 4px;
+            font-size: 13px;
+        }
+        .sidebar-search .fa-magnifying-glass {
+            color: var(--text-color-secondary);
+            margin-right: 8px;
+        }
+
+        .sidebar-list ul {
+            list-style: none;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        .sidebar-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            user-select: none;
+            margin-bottom: 4px;
+        }
+        .sidebar-list li:hover {
+            background-color: var(--bg-color-medium);
+        }
+        .sidebar-list .item-name {
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-list .item-name i {
+            margin-right: 12px;
+            width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+        .sidebar-list .file-item i {
+            color: var(--accent-color-blue);
+        }
+        .sidebar-list .folder-item i {
+            color: #d19a66;
+        }
+        .sidebar-list .folder-up-item i {
+            color: #aaaaaa;
+        }
+
+        .context-menu {
+            position: fixed;
+            background-color: var(--bg-color-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            min-width: 180px;
+            overflow: hidden;
+            display: none;
+        }
+        .context-menu-item {
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .context-menu-item:hover {
+            background-color: var(--bg-color-medium);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+            background-color: var(--bg-color-dark);
+            padding: 0 20px;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+            /* 确保状态栏始终可见 */
+            position: relative;
+            z-index: 100;
+        }
+
+        .status-bar .actions-left, .status-bar .actions-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-bar button {
+            background-color: var(--bg-color-medium);
+            color: var(--text-color-primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .status-bar button:hover {
+            background-color: var(--bg-color-light);
+            transform: translateY(-1px);
+        }
+        .status-bar button:active {
+            transform: translateY(1px);
+        }
+
+        .status-bar .actions-right .icon {
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 16px;
+            padding: 6px;
+            border-radius: 4px;
+        }
+        .status-bar .actions-right .icon:hover {
+            color: var(--text-color-primary);
+            background-color: var(--bg-color-medium);
+        }
+        .status-bar .inject-icon {
+            color: var(--accent-color-green);
+        }
+        .status-bar .inject-icon.active {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(44, 114, 58, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(44, 114, 58, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(44, 114, 58, 0); }
+        }
+
+        .injection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #2d2d2d;
+        }
+        .injection-status .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius:  50%;
+            background-color: #e81123;
+        }
+        .injection-status .status-dot.injected {
+            background-color: var(--accent-color-green);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #252526;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            border-left: 4px solid var(--accent-color-green);
+        }
+        .notification.error {
+            border-left: 4px solid var(--accent-color-red);
+        }
+        .notification.info {
+            border-left: 4px solid var(--accent-color-blue);
+        }
+
+        .app-container.file-explorer-active .editor-pane,
+        .app-container.file-explorer-active .resizer {
+            display: none;
+        }
+
+        .app-container.file-explorer-active .sidebar-pane {
+            width: 100%;
+            max-width: none;
+            padding: 15px 20px;
+        }
+
+        .app-container.file-explorer-active .sidebar-list ul {
+            max-height: calc(100vh - 180px);
+        }
+
+        .app-container.file-explorer-active .status-bar {
+            display: none;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-color-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--text-color-primary);
+            background-color: var(--bg-color-medium);
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: var(--text-color-secondary);
+        }
+
+        .file-browser-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .file-browser-title {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .file-actions button {
+            padding: 6px 12px;
+            background-color: var(--bg-color-medium);
+            color: var(--text-color-primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .file-actions button:hover {
+            background-color: var(--bg-color-light);
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            padding: 10px 0;
+        }
+
+        .file-grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border-radius: 6px;
+            background-color: var(--bg-color-medium);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            height: 120px;
+        }
+
+        .file-grid-item:hover {
+            background-color: var(--bg-color-light);
+            transform: translateY(-2px);
+        }
+
+        .file-grid-item i {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .file-grid-item .file-name {
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        .folder-item i {
+            color: #d19a66;
+        }
+
+        .file-item i {
+            color: var(--accent-color-blue);
+        }
+
+        .back-to-editor {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: var(--accent-color-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 100;
+            display: none;
+        }
+
+        .app-container.file-explorer-active .back-to-editor {
+            display: block;
+        }
+
+        .quick-scripts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .script-btn {
+            padding: 8px 12px;
+            background-color: var(--bg-color-medium);
+            color: var(--text-color-primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 6px;
+        }
+
+        .script-btn:hover {
+            background-color: var(--bg-color-light);
+            transform: translateY(-2px);
+        }
+
+        .script-btn i {
+            font-size: 14px;
+        }
+
+        .settings-page {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 88px);
+            background-color: var(--bg-color-darkest);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .settings-page.active {
+            display: flex;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-header h2 {
+            font-size: 24px;
+            margin-left: 15px;
+        }
+
+        .settings-header i {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .settings-header i:hover {
+            background-color: var(--bg-color-medium);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .setting-info p {
+            font-size: 13px;
+            color: var(--text-color-secondary);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-color-medium);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color-blue);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .settings-page.active {
+            pointer-events: auto;
+            z-index: 1000;
+        }
+
+        .settings-page.active ~ * {
+            pointer-events: auto;
+        }
+
+        .settings-page.active ~ .title-bar,
+        .settings-page.active ~ .main-content,
+        .settings-page.active ~ .status-bar {
+            opacity: 0.5;
+        }
+
+        .settings-page.active ~ .status-bar {
+            display: flex;
+        }
+
+        #splash-screen.minimized .splash-logo {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            transform: scale(0.5);
+            margin-bottom: 0;
+            z-index: 100;
+        }
+
+        #splash-screen.minimized .splash-title {
+            font-size: 24px;
+            margin-bottom: 0;
+            text-shadow: 0 0 10px rgba(58, 110, 165, 0.5);
+            background: none;
+            -webkit-text-fill-color: var(--text-color-primary);
+
+        }
+
+        .splash-status-container {
+            position: relative;
+        }
+
+        .status-text-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .progress-percentage {
+            font-weight: bold;
+            color: var(--accent-color-blue);
+        }
+
+        /* 控制台标签页样式 */
+        .console-container {
+            height: 100%;
+            background-color: var(--bg-color-darkest);
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #252526;
+            border-bottom: 1px solid #444;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .console-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            white-space: pre-wrap;
+            background-color: #1e1e1e;
+        }
+
+        .console-message {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .console-message.info {
+            color: #d4d4d4;
+        }
+
+        .console-message.warning {
+            color: #ffcc00;
+        }
+
+        .console-message.error {
+            color: #ff6666;
+        }
+        .console-message.info {
+            color: #ffffff;
+        }
+
+        .console-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-content::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .console-content::-webkit-scrollbar-thumb {
+            background: #3c3c3c;
+            border-radius: 4px;
+        }
+
+        .console-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 毛玻璃滚动条 */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(40, 40, 40, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 10px;
+            border: 2px solid rgba(40, 40, 40, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(140, 140, 140, 0.7);
+        }
+
+        /* 开屏动画更新 */
+        .update-icon {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent-color-blue);
+        }
+
+        .update-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .update-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            background-color: var(--accent-color-blue);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .update-btn:hover {
+            background-color: #2a5a8a;
+            transform: translateY(-2px);
+        }
+
+        .update-btn.cancel {
+            background-color: var(--bg-color-medium);
+        }
+
+        .update-btn.cancel:hover {
+            background-color: var(--bg-color-light);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .update-status.show {
+            opacity: 1;
+            transform: translateY(0);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        /* 错误处理按钮样式 */
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .error-btn {
+            padding: 10px 25px;
+            border-radius: 6px;
+            border: none;
+            background-color: var(--accent-color-blue);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .error-btn:hover {
+            background-color: #2a5a8a;
+            transform: translateY(-2px);
+        }
+
+        .error-btn.retry {
+            background-color: var(--accent-color-green);
+        }
+
+        .error-btn.continue {
+            background-color: var(--bg-color-medium);
+        }
+
+        .error-btn.continue:hover {
+            background-color: var(--bg-color-light);
+        }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <div class="splash-logo">
+        <div class="splash-title">SYNAPSE X</div>
+        <div class="splash-version">UI 2.0.0 beta-34a | Seliware UI</div>
+    </div>
+
+    <div class="update-container">
+        <div class="update-icon">
+            <i class="fas fa-sync-alt fa-spin"></i>
+        </div>
+
+        <div class="update-status" id="update-status">
+            <div class="update-text" id="update-text">Checking For UI Updates</div>
+
+            <div class="update-progress-container">
+                <div class="progress-bar-large">
+                    <div class="progress-large" id="update-progress"></div>
+                </div>
+                <div class="progress-text" id="progress-text">0%</div>
+            </div>
+
+            <div class="update-actions" id="update-actions" style="display: none;">
+                <button class="update-btn" id="update-install-btn">Install Update</button>
+                <button class="update-btn cancel" id="update-cancel-btn">Cancel</button>
+            </div>
+
+            <!-- 错误处理按钮 -->
+            <div class="error-actions" id="error-actions" style="display: none;">
+                <button class="error-btn retry" id="retry-btn">Retry</button>
+                <button class="error-btn continue" id="continue-btn">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <header class="title-bar" id="title-bar-draggable">
+        <div class="title-bar-left">
+            <div class="logo">
+                <span class="logo-text">SYNAPSE</span>
+                <div class="logo-info">
+                    <span>UI 2.0.0 beta-34a</span>
+                    <span>Seliware UI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="title-bar-center">
+            <div class="center-icons">
+                <i class="fa-solid fa-code icon" id="editor-btn" title="Editor"></i>
+                <i class="fa-solid fa-folder icon" id="toggle-file-explorer" title="File Explorer"></i>
+                <i class="fa-solid fa-gear icon" id="settings-btn" title="Settings"></i>
+            </div>
+        </div>
+
+        <div class="title-bar-right">
+            <div class="window-controls">
+                <span id="minimize-btn" class="icon-btn minimize-btn" title="Minimize"><i class="fa-solid fa-minus"></i></span>
+                <span id="maximize-btn" class="icon-btn maximize-btn" title="Maximize"><i class="fa-solid fa-square"></i></span>
+                <span id="close-btn" class="icon-btn close-btn" title="Close"><i class="fa-solid fa-xmark"></i></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="editor-pane">
+            <div class="tab-bar" id="tab-bar">
+                <div class="tab-item active" data-tab-id="tab1">
+                    <i class="fa-regular fa-file-code tab-icon"></i>
+                    <span class="tab-title">Untitled</span>
+                    <i class="fa-solid fa-xmark tab-close"></i>
+                </div>
+                <div class="tab-add" id="add-console-tab" title="Console Tab">
+                    <i class="fa-solid fa-terminal"></i>
+                </div>
+                <div class="tab-add" id="add-tab" title="New Tab">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+            </div>
+
+            <div id="editor-tab1" class="editor-container active"></div>
+        </div>
+
+        <div class="resizer" id="drag-handle"></div>
+
+        <aside class="sidebar-pane">
+            <div class="file-browser-header">
+                <div class="file-browser-title">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>File Explorer</span>
+                </div>
+            </div>
+
+            <div class="breadcrumb" id="breadcrumb">
+                <div class="breadcrumb-item active" data-path="/scripts">scripts</div>
+            </div>
+
+            <div class="sidebar-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search scripts..." id="file-search" aria-label="Search scripts">
+            </div>
+
+            <div class="quick-scripts">
+                <button class="script-btn" id="dex-btn" title="DexV4">
+                    <i class="fa-solid fa-box"></i> DexV4
+                </button>
+                <button class="script-btn" id="esp-btn" title="Unnamed ESP">
+                    <i class="fa-solid fa-eye"></i> ESP
+                </button>
+                <button class="script-btn" id="cobalt-btn" title="Cobalt(Spy)">
+                    <i class="fa-solid fa-user-secret"></i> Cobalt
+                </button>
+                <button class="script-btn" id="mspaint-btn" title="Mspaint">
+                    <i class="fa-solid fa-paintbrush"></i> Mspaint
+                </button>
+            </div>
+
+            <div class="sidebar-list">
+                <ul id="file-list">
+                    <!-- 文件列表将在这里动态生成 -->
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <button class="back-to-editor" id="back-to-editor">
+        <i class="fa-solid fa-arrow-left"></i> Back to Editor
+    </button>
+
+    <div id="settings-page" class="settings-page">
+        <div class="settings-header">
+            <i class="fa-solid fa-arrow-left" id="back-from-settings"></i>
+            <h2>Settings</h2>
+        </div>
+
+        <div class="settings-content">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>Window TopMost</h3>
+                    <p>Keep window always on top</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="topmost-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>Auto Inject</h3>
+                    <p>Automatically inject when Roblox starts</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="autoinject-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <footer class="status-bar">
+        <div class="actions-left">
+            <button id="execute-btn"><i class="fa-solid fa-play"></i> Execute</button>
+            <button id="clear-btn"><i class="fa-solid fa-eraser"></i> Clear</button>
+            <button id="open-btn"><i class="fa-solid fa-folder-open"></i> Open</button>
+            <button id="save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+        </div>
+        <div class="actions-right">
+            <div class="injection-status">
+                <div class="status-dot" id="inject-status"></div>
+                <span id="inject-status-text">Not Injected</span>
+            </div>
+            <i class="fa-solid fa-syringe icon inject-icon" id="inject-btn" title="Inject"></i>
+            <i class="fa-solid fa-chart-line icon" title="Performance Monitor"></i>
+            <i class="fa-solid fa-magnifying-glass icon" title="Global Search"></i>
+            <i class="fa-solid fa-terminal icon" id="console-icon" title="Console"></i>
+        </div>
+    </footer>
+</div>
+
+<div class="context-menu" id="context-menu">
+    <div class="context-menu-item" id="load-file">
+        <i class="fa-solid fa-file-import"></i>
+        <span>Load into Editor</span>
+    </div>
+    <div class="context-menu-item" id="execute-file">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Execute File</span>
+    </div>
+    <div class="context-menu-item" id="delete-file">
+        <i class="fa-solid fa-trash"></i>
+        <span>Delete File</span>
+    </div>
+</div>
+
+<div class="notification" id="notification">
+    <i class="fa-solid fa-check-circle"></i>
+    <span id="notification-message">Operation completed successfully</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const splashScreen = document.getElementById('splash-screen');
+        const updateStatus = document.getElementById('update-status');
+        const updateText = document.getElementById('update-text');
+        const updateProgress = document.getElementById('update-progress');
+        const progressText = document.getElementById('progress-text');
+        const updateActions = document.getElementById('update-actions');
+        const updateInstallBtn = document.getElementById('update-install-btn');
+        const updateCancelBtn = document.getElementById('update-cancel-btn');
+        const appContainer = document.querySelector('.app-container');
+        const errorActions = document.getElementById('error-actions');
+        const retryBtn = document.getElementById('retry-btn');
+        const continueBtn = document.getElementById('continue-btn');
+
+        // 显示更新状态
+        setTimeout(() => {
+            updateStatus.classList.add('show');
+            checkForUpdates();
+        }, 500);
+
+        // 检查更新
+        let progressInterval; // 用于保存进度定时器
+
+        async function checkForUpdates() {
+            try {
+                // 重置
+                updateProgress.style.width = '0%';
+                progressText.textContent = '0%';
+                updateActions.style.display = 'none';
+                errorActions.style.display = 'none';
+
+                // 清除之前的定时器
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+
+                // 模拟进度
+                let progress = 0;
+                progressInterval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 5) + 1;
+                    if (progress >= 40) {
+                        clearInterval(progressInterval);
+                        updateProgress.style.width = '40%';
+                        progressText.textContent = '40%';
+                        // 实际检查更新
+                        verifyUpdate();
+                    } else {
+                        updateProgress.style.width = progress + '%';
+                        progressText.textContent = progress + '%';
+                    }
+                }, 50);
+            } catch (error) {
+                console.error('Update check failed:', error);
+                handleUpdateError("Update check failed! Please check your connection and try again.");
+            }
+        }
+
+        // 验证更新
+        async function verifyUpdate() {
+            const currentVersion = "1.3";
+            try {
+                updateText.textContent = "Verifying version...";
+                // 从GitHub获取最新版本
+                const response = await fetch('https://raw.githubusercontent.com/REKMS-cttub/SynUI/refs/heads/main/CurrentLastetVersion');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch version');
+                }
+
+                const latestVersion = await response.text();
+
+                if (latestVersion.trim() === currentVersion) {
+                    // 没有更新
+                    updateText.textContent = "No Update Available";
+                    updateProgress.style.width = '100%';
+                    progressText.textContent = '100%';
+
+                    // 继续启动
+                    setTimeout(() => {
+                        splashScreen.classList.add('minimized');
+                        setTimeout(() => {
+                            appContainer.classList.add('visible');
+                        }, 800);
+                    }, 1000);
+                } else {
+                    // 有可用更新
+                    postMessage({ "type":"update"})
+                }
+            } catch (error) {
+                console.error('Version verification failed:', error);
+                handleUpdateError("Version check failed! Please check your connection and try again.");
+            }
+        }
+
+        // 处理更新错误
+        function handleUpdateError(errorMessage) {
+            updateText.textContent = errorMessage;
+            updateProgress.style.width = '100%';
+            progressText.textContent = '100%';
+            updateActions.style.display = "none";
+            errorActions.style.display = "flex";
+
+            // 添加重试事件
+            retryBtn.addEventListener('click', () => {
+                checkForUpdates();
+            });
+
+            // 添加继续事件
+            continueBtn.addEventListener('click', () => {
+                splashScreen.classList.add('minimized');
+                setTimeout(() => {
+                    appContainer.classList.add('visible');
+                }, 800);
+            });
+        }
+
+        // 安装更新按钮事件
+        updateInstallBtn.addEventListener('click', () => {
+            updateText.textContent = "Downloading Update...";
+            updateProgress.style.width = "60%";
+            progressText.textContent = "60%";
+            updateActions.style.display = "none";
+
+            // 模拟下载过程
+            let downloadProgress = 60;
+            const downloadInterval = setInterval(() => {
+                downloadProgress += Math.floor(Math.random() * 3) + 1;
+
+                if (downloadProgress >= 95) {
+                    downloadProgress = 95;
+                    updateProgress.style.width = downloadProgress + '%';
+                    progressText.textContent = downloadProgress + '%';
+
+                    // 创建更新脚本
+                    createUpdateScript();
+
+                    clearInterval(downloadInterval);
+                } else {
+                    updateProgress.style.width = downloadProgress + '%';
+                    progressText.textContent = downloadProgress + '%';
+                }
+            }, 50);
+        });
+
+        // 创建更新脚本
+        function createUpdateScript() {
+            updateText.textContent = "Creating Update Script...";
+            updateProgress.style.width = "98%";
+            progressText.textContent = "98%";
+
+            // 创建bat文件内容
+            const batContent = `"`;
+
+            // 创建bat文件
+            const batBlob = new Blob([batContent], { type: 'application/bat' });
+            const batUrl = URL.createObjectURL(batBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = batUrl;
+            downloadLink.download = 'update.bat';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            // 完成更新准备
+            setTimeout(() => {
+                updateText.textContent = "Update Ready!";
+                updateProgress.style.width = "100%";
+                progressText.textContent = "100%";
+
+                // 显示重启提示
+                setTimeout(() => {
+                    updateText.textContent = "Please run update.bat to complete the update";
+                    updateActions.innerHTML = `
+                        <button class="update-btn" id="run-update-btn">Run Update</button>
+                        <button class="update-btn cancel" id="later-btn">Later</button>
+                    `;
+                    updateActions.style.display = "flex";
+
+                    document.getElementById('run-update-btn').addEventListener('click', () => {
+                        // 这里需要启动bat文件
+                        updateText.textContent = "Running update...";
+                        updateActions.style.display = "none";
+
+                        // 在实际应用中，这里需要启动bat文件
+                        // 由于浏览器安全限制，无法直接执行
+                        showNotification("Please run the update.bat file manually", "info");
+                    });
+
+                    document.getElementById('later-btn').addEventListener('click', () => {
+                        splashScreen.classList.add('minimized');
+                        setTimeout(() => {
+                            appContainer.classList.add('visible');
+                            showNotification("Update will be installed when you run update.bat", "info");
+                        }, 800);
+                    });
+                }, 1000);
+            }, 500);
+        }
+
+        // 取消更新按钮事件
+        updateCancelBtn.addEventListener('click', () => {
+            splashScreen.classList.add('minimized');
+            setTimeout(() => {
+                appContainer.classList.add('visible');
+            }, 800);
+        });
+
+        // 以下是原始功能代码（保持不变）
+        let editors = {};
+        let currentTabId = "tab1";
+        let nextTabId = 2;
+        let currentContextFile = null;
+        let isInjected = false;
+        let currentFolder = "/scripts";
+        let socket = null;
+        let isFileExplorerActive = false;
+        let consoleLogs = [];
+        let consoleTabId = null;
+
+        function initWebSocket() {
+            const WS_PORT = 8765;
+            socket = new WebSocket(`ws://localhost:${WS_PORT}/ui`);
+
+            socket.addEventListener('open', (event) => {
+                console.log('WebSocket connected');
+                showNotification('Connected to backend', 'success');
+                // 立即请求scripts列表
+                postMessage({ type: 'get_scripts_list', path: '/scripts' });
+            });
+
+            socket.addEventListener('message', (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    console.log('Received from server:', message);
+                    handleWebViewMessage(message);
+                } catch (error) {
+                    console.error('Error parsing message:', error);
+                }
+            });
+
+            socket.addEventListener('error', (error) => {
+                console.error('WebSocket error:', error);
+                showNotification('WebSocket connection error', 'error');
+            });
+
+            socket.addEventListener('close', (event) => {
+                console.log('WebSocket disconnected');
+                showNotification('Disconnected from backend', 'error');
+                setTimeout(initWebSocket, 3000);
+            });
+        }
+
+        function postMessage(message) {
+            console.log('Sending to server:', message);
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(message));
+            } else {
+                console.error('WebSocket is not connected');
+                showNotification('Not connected to backend', 'error');
+            }
+        }
+
+        await initEditors();
+        initWebSocket();
+        setupEventListeners();
+        initContextMenu();
+        updateInjectionStatus();
+
+        async function initEditors() {
+            require.config({
+                paths: {
+                    'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs'
+                }
+            });
+
+            await new Promise((resolve) => {
+                require(['vs/editor/editor.main'], resolve);
+            });
+
+            editors["tab1"] = monaco.editor.create(document.getElementById('editor-tab1'), {
+                value: `-- Welcome to Synapse UI\n-- Type your Lua script here\n\nprint("Hello Synapse!")\n\nfunction main()\n    -- Your code here\nend\n\nmain()`,
+                language: 'lua',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                wordWrap: 'on',
+                fontSize: 14,
+                fontFamily: 'Consolas, Courier New, monospace',
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                lineNumbers: 'on'
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('minimize-btn').addEventListener('click', minimizeWindow);
+            document.getElementById('maximize-btn').addEventListener('click', maximizeWindow);
+            document.getElementById('close-btn').addEventListener('click', closeWindow);
+
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('tab-close')) {
+                        switchTab(tab.dataset.tabId);
+                    }
+                });
+
+                tab.querySelector('.tab-close').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeTab(tab.dataset.tabId);
+                });
+            });
+
+            document.getElementById('add-tab').addEventListener('click', addNewTab);
+            document.getElementById('add-console-tab').addEventListener('click', addConsoleTab);
+
+            document.getElementById('execute-btn').addEventListener('click', executeCode);
+            document.getElementById('clear-btn').addEventListener('click', clearEditor);
+            document.getElementById('open-btn').addEventListener('click', openFile);
+            document.getElementById('save-btn').addEventListener('click', saveFile);
+            document.getElementById('inject-btn').addEventListener('click', injectro);
+
+            document.getElementById('file-search').addEventListener('input', searchFiles);
+
+            document.getElementById('file-list').addEventListener('click', handleFileClick);
+            document.getElementById('file-list').addEventListener('contextmenu', handleFileContextMenu);
+
+            const titleBar = document.getElementById('title-bar-draggable');
+            titleBar.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.window-controls, .icon')) {
+                    return;
+                }
+                postMessage({ type: 'drag_window' });
+            });
+
+            const resizer = document.getElementById('drag-handle');
+            const sidebar = document.querySelector('.sidebar-pane');
+            let isResizing = false;
+
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', () => {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                });
+            });
+
+            function handleMouseMove(e) {
+                if (!isResizing) return;
+                const newWidth = window.innerWidth - e.clientX;
+                if (newWidth > 180 && newWidth < 500) {
+                    sidebar.style.width = `${newWidth}px`;
+                }
+            }
+
+            document.getElementById('toggle-file-explorer').addEventListener('click', toggleFileExplorer);
+            document.getElementById('back-to-editor').addEventListener('click', toggleFileExplorer);
+
+            document.getElementById('editor-btn').addEventListener('click', () => {
+                const settingsPage = document.getElementById('settings-page');
+                if (settingsPage.classList.contains('active')) {
+                    settingsPage.classList.remove('active');
+                    showNotification('Settings closed', 'info');
+                }
+                if (isFileExplorerActive) {
+                    toggleFileExplorer();
+                }
+            });
+
+            document.getElementById('dex-btn').addEventListener('click', executeDexScript);
+            document.getElementById('esp-btn').addEventListener('click', executeESPScript);
+            document.getElementById('cobalt-btn').addEventListener('click', executeCobaltScript);
+            document.getElementById('mspaint-btn').addEventListener('click', executeMspaintScript);
+
+            document.getElementById('settings-btn').addEventListener('click', () => {
+                const settingsPage = document.getElementById('settings-page');
+                if (settingsPage.classList.contains('active')) {
+                    settingsPage.classList.remove('active');
+                    showNotification('Returned to editor', 'info');
+                } else {
+                    settingsPage.classList.add('active');
+                    showNotification('Settings opened', 'info');
+                }
+            });
+
+            document.getElementById('back-from-settings').addEventListener('click', () => {
+                document.getElementById('settings-page').classList.remove('active');
+                showNotification('Returned to editor', 'info');
+            });
+
+            document.getElementById('topmost-toggle').addEventListener('change', (e) => {
+                postMessage({
+                    type: 'set_topmost',
+                    value: e.target.checked
+                });
+            });
+
+            document.getElementById('autoinject-toggle').addEventListener('change', (e) => {
+                postMessage({
+                    type: 'set_autoinject',
+                    value: e.target.checked
+                });
+            });
+        }
+
+        function addConsoleTab() {
+            // 如果控制台标签已存在，则切换到该标签
+            if (consoleTabId && document.querySelector(`.tab-item[data-tab-id="${consoleTabId}"]`)) {
+                switchTab(consoleTabId);
+                return;
+            }
+
+            const tabId = `tab${nextTabId++}`;
+            const tabBar = document.getElementById('tab-bar');
+
+            const tabItem = document.createElement('div');
+            tabItem.className = 'tab-item';
+            tabItem.dataset.tabId = tabId;
+            tabItem.dataset.consoleTab = "true"; // 标记为控制台标签页
+            tabItem.innerHTML = `
+                <i class="fa-solid fa-terminal tab-icon"></i>
+                <span class="tab-title">Console</span>
+                <i class="fa-solid fa-xmark tab-close"></i>
+            `;
+
+            tabBar.insertBefore(tabItem, document.getElementById('add-console-tab'));
+
+            const editorContainer = document.createElement('div');
+            editorContainer.id = `editor-${tabId}`;
+            editorContainer.className = 'editor-container';
+            // 创建控制台内容
+            editorContainer.innerHTML = `
+                <div class="console-container">
+                    <div class="console-header">
+                        <span>Console Output</span>
+                    </div>
+                    <div class="console-content" id="console-content-${tabId}"></div>
+                </div>
+            `;
+            document.querySelector('.editor-pane').appendChild(editorContainer);
+
+            // 添加事件监听
+            tabItem.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('tab-close')) {
+                    switchTab(tabId);
+                }
+            });
+
+            tabItem.querySelector('.tab-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(tabId);
+            });
+
+            // 切换到新标签页
+            switchTab(tabId);
+
+            // 记录控制台标签页ID
+            consoleTabId = tabId;
+
+            // 将历史日志添加到控制台
+            const consoleContent = document.getElementById(`console-content-${tabId}`);
+            if (consoleContent) {
+                consoleLogs.forEach(log => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `console-message ${log.type}`;
+                    messageElement.textContent = log.text;
+                    consoleContent.appendChild(messageElement);
+                });
+                consoleContent.scrollTop = consoleContent.scrollHeight;
+            }
+        }
+
+        function executeDexScript() {
+            const code = `loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()`;
+            postMessage({
+                type: 'execute',
+                code: code,
+                tabId: currentTabId
+            });
+            showNotification('Executing DexV4...', 'info');
+        }
+
+        function executeESPScript() {
+            const code = `loadstring(game:HttpGet("https://raw.githubusercontent.com/ic3w0lf22/Unnamed-ESP/refs/heads/master/UnnamedESP.lua"))()`;
+            postMessage({
+                type: 'execute',
+                code: code,
+                tabId: currentTabId
+            });
+            showNotification('Executing Unnamed ESP...', 'info');
+        }
+
+        function executeCobaltScript() {
+            const code = `loadstring(game:HttpGet("https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau"))()`;
+            postMessage({
+                type: 'execute',
+                code: code,
+                tabId: currentTabId
+            });
+            showNotification('Executing Cobalt(Spy)...', 'info');
+        }
+
+        function executeMspaintScript() {
+            const code = `loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/002c19202c9946e6047b0c6e0ad51f84.lua"))()`;
+            postMessage({
+                type: 'execute',
+                code: code,
+                tabId: currentTabId
+            });
+            showNotification('Executing Mspaint...', 'info');
+        }
+
+        function toggleFileExplorer() {
+            const appContainer = document.querySelector('.app-container');
+            isFileExplorerActive = !isFileExplorerActive;
+            appContainer.classList.toggle('file-explorer-active', isFileExplorerActive);
+            showNotification(isFileExplorerActive ? 'File Explorer activated' : 'Editor activated', 'info');
+        }
+
+        function minimizeWindow() {
+            postMessage({ type: 'window_action', action: 'minimize' });
+            showNotification('Window minimized', 'info');
+        }
+
+        function maximizeWindow() {
+            postMessage({ type: 'window_action', action: 'maximize' });
+            showNotification('Window maximized', 'info');
+        }
+
+        function closeWindow() {
+            postMessage({ type: 'window_action', action: 'close' });
+            showNotification('Closing window...', 'info');
+        }
+
+        function switchTab(tabId) {
+            if (currentTabId === tabId) return;
+
+            const currentEditor = document.getElementById(`editor-${currentTabId}`);
+            if (currentEditor) {
+                currentEditor.classList.remove('active');
+            }
+
+            const activeTab = document.querySelector('.tab-item.active');
+            if (activeTab) {
+                activeTab.classList.remove('active');
+            }
+
+            const newTab = document.querySelector(`.tab-item[data-tab-id="${tabId}"]`);
+            if (newTab) {
+                newTab.classList.add('active');
+                currentTabId = tabId;
+            }
+
+            const editorContainer = document.getElementById(`editor-${tabId}`);
+            if (editorContainer) {
+                editorContainer.classList.add('active');
+                if (editors[tabId]) {
+                    setTimeout(() => {
+                        editors[tabId].layout();
+                    }, 10);
+                }
+            }
+        }
+
+        function addNewTab() {
+            const tabId = `tab${nextTabId++}`;
+            const tabBar = document.getElementById('tab-bar');
+
+            const tabItem = document.createElement('div');
+            tabItem.className = 'tab-item';
+            tabItem.dataset.tabId = tabId;
+            tabItem.innerHTML = `
+                    <i class="fa-regular fa-file-code tab-icon"></i>
+                    <span class="tab-title">New Tab</span>
+                    <i class="fa-solid fa-xmark tab-close"></i>
+                `;
+
+            tabBar.insertBefore(tabItem, document.getElementById('add-console-tab'));
+
+            const editorContainer = document.createElement('div');
+            editorContainer.id = `editor-${tabId}`;
+            editorContainer.className = 'editor-container';
+            document.querySelector('.editor-pane').appendChild(editorContainer);
+
+            editors[tabId] = monaco.editor.create(editorContainer, {
+                value: `-- New Script\n-- Created: ${new Date().toLocaleString()}\n\nprint("Welcome to Synapse UI!")\n`,
+                language: 'lua',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                wordWrap: 'on',
+                fontSize: 14,
+                fontFamily: 'Consolas, Courier New, monospace',
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                lineNumbers: 'on'
+            });
+
+            tabItem.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('tab-close')) {
+                    switchTab(tabId);
+                }
+            });
+
+            tabItem.querySelector('.tab-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(tabId);
+            });
+
+            switchTab(tabId);
+        }
+
+        function closeTab(tabId) {
+            if (document.querySelectorAll('.tab-item').length <= 1) {
+                showNotification("Can't close the last tab", "error");
+                return;
+            }
+
+            const tabItem = document.querySelector(`.tab-item[data-tab-id="${tabId}"]`);
+            if (tabItem) {
+                // 如果是控制台标签页，清除记录
+                if (tabId === consoleTabId) {
+                    consoleTabId = null;
+                }
+
+                tabItem.remove();
+                if (editors[tabId]) {
+                    editors[tabId].dispose();
+                    delete editors[tabId];
+                }
+                const editorContainer = document.getElementById(`editor-${tabId}`);
+                if (editorContainer) editorContainer.remove();
+                if (tabId === currentTabId) {
+                    const firstTab = document.querySelector('.tab-item');
+                    if (firstTab) {
+                        switchTab(firstTab.dataset.tabId);
+                    }
+                }
+            }
+        }
+
+        function searchFiles() {
+            const searchTerm = document.getElementById('file-search').value.toLowerCase();
+            const fileItems = document.querySelectorAll('#file-list li');
+            fileItems.forEach(item => {
+                const itemName = item.querySelector('.item-name').textContent.toLowerCase();
+                item.style.display = itemName.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+
+        function handleFileClick(e) {
+            const fileItem = e.target.closest('li');
+            if (fileItem) {
+                const fileType = fileItem.classList.contains('folder-item') ? 'folder' :
+                    fileItem.classList.contains('folder-up-item') ? 'folder-up' : 'file';
+                const filePath = fileItem.dataset.path;
+
+                if (fileType === 'folder' || fileType === 'folder-up') {
+                    currentFolder = filePath;
+                    postMessage({
+                        type: 'get_scripts_list',
+                        path: filePath
+                    });
+                } else {
+                    loadFile(filePath);
+                }
+            }
+        }
+
+        function handleFileContextMenu(e) {
+            const fileItem = e.target.closest('li');
+            if (fileItem && !fileItem.classList.contains('folder-up-item')) {
+                showContextMenu(e, fileItem.dataset.path);
+                e.preventDefault();
+            }
+        }
+
+        function initContextMenu() {
+            document.getElementById('load-file').addEventListener('click', () => {
+                if (currentContextFile) {
+                    loadFile(currentContextFile);
+                }
+                hideContextMenu();
+            });
+
+            document.getElementById('execute-file').addEventListener('click', () => {
+                if (currentContextFile) {
+                    executeFile(currentContextFile);
+                }
+                hideContextMenu();
+            });
+
+            document.getElementById('delete-file').addEventListener('click', () => {
+                if (currentContextFile) {
+                    deleteFile(currentContextFile);
+                }
+                hideContextMenu();
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#context-menu') && !e.target.closest('.file-item')) {
+                    hideContextMenu();
+                }
+            });
+        }
+
+        function showContextMenu(e, filePath) {
+            const contextMenu = document.getElementById('context-menu');
+            currentContextFile = filePath;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.top = `${e.pageY}px`;
+        }
+
+        function hideContextMenu() {
+            document.getElementById('context-menu').style.display = 'none';
+        }
+
+        function executeCode() {
+            const editor = editors[currentTabId];
+            if (editor) {
+                const code = editor.getValue();
+                postMessage({
+                    type: 'execute',
+                    code: code,
+                    tabId: currentTabId
+                });
+            }
+        }
+
+        function clearEditor() {
+            const editor = editors[currentTabId];
+            if (editor) {
+                editor.setValue('');
+                showNotification('Editor cleared', 'info');
+            }
+        }
+
+        function openFile() {
+            postMessage({ type: 'open_file', tabId: currentTabId });
+        }
+
+        function saveFile() {
+            const editor = editors[currentTabId];
+            if (editor) {
+                const code = editor.getValue();
+                postMessage({
+                    type: 'save_file',
+                    code: code,
+                    tabId: currentTabId
+                });
+            }
+        }
+
+        function injectro() {
+            const injectBtn = document.getElementById('inject-btn');
+            injectBtn.classList.add('pulse');
+            postMessage({ type: 'injectroblox' });
+            showNotification('Injecting...', 'info');
+            setTimeout(() => injectBtn.classList.remove('pulse'), 3000);
+        }
+
+        function loadFile(filePath) {
+            postMessage({
+                type: 'load_file',
+                path: filePath,
+                tabId: currentTabId
+            });
+        }
+
+        function executeFile(filePath) {
+            postMessage({ type: 'execute_file', path: filePath });
+        }
+
+        function deleteFile(filePath) {
+            postMessage({ type: 'delete_file', path: filePath });
+        }
+
+        function updateInjectionStatus() {
+            const statusDot = document.getElementById('inject-status');
+            const statusText = document.getElementById('inject-status-text');
+            const injectBtn = document.getElementById('inject-btn');
+            if (isInjected) {
+                statusDot.className = 'status-dot injected';
+                statusText.textContent = 'Injected';
+                injectBtn.classList.add('active');
+            } else {
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Not Injected';
+                injectBtn.classList.remove('active');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const messageEl = document.getElementById('notification-message');
+            const icon = notification.querySelector('i');
+            messageEl.textContent = message;
+            notification.className = 'notification ' + type;
+            if (type === 'success') {
+                icon.className = 'fa-solid fa-check-circle';
+            } else if (type === 'error') {
+                icon.className = 'fa-solid fa-exclamation-circle';
+            } else {
+                icon.className = 'fa-solid fa-info-circle';
+            }
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        function addConsoleMessage(text, messageType) {
+            const now = new Date();
+
+            const year = now.getFullYear();    // 2025
+            const month = now.getMonth() + 1;  // 6（注意月份从0开始计数）
+            const date = now.getDate();        // 22
+            const hours = now.getHours();      // 14（24小时制）
+            const minutes = now.getMinutes();  // 30
+            const seconds = now.getSeconds();  // 45
+
+// 组合成自定义格式
+            const formattedTime = `${hours}:${minutes}:${seconds} : `;
+            // 将消息存入日志数组
+            consoleLogs.push({ text, type: messageType });
+
+            // 如果当前有控制台标签页，则把消息添加到该标签页
+            if (consoleTabId) {
+                const consoleContent = document.getElementById(`console-content-${consoleTabId}`);
+                if (consoleContent) {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `console-message ${messageType}`;
+                    messageElement.textContent = formattedTime + text;
+                    consoleContent.appendChild(messageElement);
+                    consoleContent.scrollTop = consoleContent.scrollHeight;
+                }
+            }
+        }
+
+        function handleWebViewMessage(message) {
+            try {
+                console.log('Received message from .NET:', message);
+                if (message.type === 'inject_result') {
+                    const injectBtn = document.getElementById('inject-btn');
+                    injectBtn.classList.remove('pulse');
+                    isInjected = message.success;
+                    if (message.success) {
+                        showNotification('Injection successful!', 'success');
+                        injectBtn.classList.add('success-pulse');
+                        setTimeout(() => injectBtn.classList.remove('success-pulse'), 2000);
+                    } else {
+                        const errorMsg = message.error || 'Unknown error';
+                        showNotification(`Injection failed: ${errorMsg}`, 'error');
+                        injectBtn.classList.add('error-pulse');
+                        setTimeout(() => injectBtn.classList.remove('error-pulse'), 2000);
+                    }
+                    updateInjectionStatus();
+                }
+                else if (message.type === 'file_list') {
+                    populateFileListWithData(message.files, message.currentPath);
+                }
+                else if (message.type === 'file_loaded') {
+                    const editor = editors[message.tabId];
+                    if (editor) {
+                        editor.setValue(message.content);
+                        const tabItem = document.querySelector(`.tab-item[data-tab-id="${message.tabId}"] .tab-title`);
+                        if (tabItem) {
+                            tabItem.textContent = message.name;
+                        }
+                        showNotification(`Loaded: ${message.name}`, 'success');
+                    }
+                }
+                else if (message.type === 'execute_result') {
+                    if (message.success) {
+                        showNotification('Code executed successfully!', 'success');
+                    } else {
+                        showNotification(`Execution failed: ${message.reason}`, 'error');
+                    }
+                }
+                else if (message.type === 'update_title') {
+                    const tabItem = document.querySelector(`.tab-item[data-tab-id="${message.tabId}"] .tab-title`);
+                    if (tabItem) {
+                        tabItem.textContent = message.title;
+                    }
+                }
+                else if (message.type === 'settings') {
+                    document.getElementById('topmost-toggle').checked = message.topmost;
+                    document.getElementById('autoinject-toggle').checked = message.autoinject;
+                }
+                else if (message.type === 'console_message') {
+                    addConsoleMessage(message.text, message.messageType);
+                }
+            } catch (error) {
+                console.error('Error handling message:', error);
+            }
+        }
+
+        function populateFileListWithData(files, currentPath) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            currentFolder = currentPath;
+            const breadcrumb = document.getElementById('breadcrumb');
+            breadcrumb.innerHTML = `<div class="breadcrumb-item active" data-path="${currentPath}">${currentPath.replace('/scripts', 'scripts')}</div>`;
+
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.className = file.type + '-item';  // 确保使用后端返回的 type 值
+                li.dataset.path = file.path;
+
+                // 修复：使用后端返回的文件类型设置图标
+                let iconClass = 'fa-regular fa-file';
+                if (file.type === 'folder') {
+                    iconClass = 'fa-solid fa-folder';
+                } else if (file.type === 'folder-up') {
+                    iconClass = 'fa-solid fa-arrow-left';
+                }
+
+                li.innerHTML = `
+            <span class="item-name">
+                <i class="${iconClass}"></i>
+                ${file.name}
+            </span>
+        `;
+                fileList.appendChild(li);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
