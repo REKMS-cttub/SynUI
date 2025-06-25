@@ -396,6 +396,7 @@ rmdir /s /q ""%temp_dir%"" 2>nul
 echo Operation completed successfully!
 del ""%cd%\%zip_file%"" >nul
 start """" synapse_x_v3.exe
+pause
 powershell -Command ""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPath '%0' -Force""
 ";
             File.WriteAllText("GetSynUI.bat",upbat);
