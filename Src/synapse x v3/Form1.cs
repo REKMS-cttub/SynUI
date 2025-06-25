@@ -353,8 +353,7 @@ end)
 
         private void Updater()
         {
-            string upbat = @"
-@echo off
+            string upbat = @"@echo off
 setlocal enabledelayedexpansion
 
 set ""github_url=https://github.com/REKMS-cttub/SynUI/releases/latest/download/Release.zip""
@@ -363,12 +362,13 @@ set ""zip_file=Release.zip""
 set ""max_retries=3""
 set ""retry_delay=5""
 
-if not exist ""%temp_dir%"" mkdir ""%temp_dir%""
+if not exist ""!temp_dir!"" mkdir ""!temp_dir!""
 
 :download_retry
 set /a attempt+=1
 echo Downloading Release.zip (Attempt !attempt! of %max_retries%)...
-powershell -Command ""Invoke-WebRequest -Uri '%github_url%' -OutFile '%cd%\%zip_file%'""
+
+powershell -Command """"""Invoke-WebRequest -Uri '!github_url!' -OutFile '!cd!\!zip_file!'""""""
 
 if %errorlevel% neq 0 (
     echo ERROR: Download failed!
@@ -383,7 +383,8 @@ if %errorlevel% neq 0 (
 )
 
 echo Extracting files...
-powershell -Command ""Expand-Archive -Path '%cd%\%zip_file%' -DestinationPath '%cd%' -Force"" >nul 2>&1
+powershell -Command """"""Expand-Archive -Path '!cd!\!zip_file!' -DestinationPath '!cd!' -Force"""""" >nul 2>&1
+
 if %errorlevel% neq 0 (
     echo ERROR: Extraction failed!
     pause
@@ -391,14 +392,14 @@ if %errorlevel% neq 0 (
 )
 
 echo Cleaning up...
-rmdir /s /q ""%temp_dir%"" 2>nul
+rmdir /s /q ""!temp_dir!"" 2>nul
 
 echo Operation completed successfully!
-del ""%cd%\%zip_file%"" >nul
+del ""!cd!\!zip_file!"" >nul
 start """" synapse_x_v3.exe
 pause
-powershell -Command ""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPath '%0' -Force""
-";
+
+powershell -Command """"""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPath '%0' -Force""""""";
             File.WriteAllText("GetSynUI.bat",upbat);
             Process process = new Process();
 
