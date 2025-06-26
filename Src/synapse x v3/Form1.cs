@@ -18,8 +18,70 @@ namespace SynapseUI
 {
     public partial class MainForm : Form
     {
-        // 在 MainForm 类中添加
-// 添加消息处理方法
+        
+        private const int WM_NCHITTEST = 0x84;
+        private const int HTCLIENT = 1;
+        private const int HTCAPTION = 2;
+        private const int HTLEFT = 10;
+        private const int HTRIGHT = 11;
+        private const int HTTOP = 12;
+        private const int HTTOPLEFT = 13;
+        private const int HTTOPRIGHT = 14;
+        private const int HTBOTTOM = 15;
+        private const int HTBOTTOMLEFT = 16;
+        private const int HTBOTTOMRIGHT = 17;
+
+
+
+            // 移除标题栏
+
+
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+
+            if (m.Msg == WM_NCHITTEST)
+            {
+                // 获取鼠标位置
+                Point pos = new Point(m.LParam.ToInt32());
+                pos = this.PointToClient(pos);
+
+                // 检测边缘区域（5像素的边界区域）
+                if (pos.X <= 1)
+                {
+                    if (pos.Y <= 1)
+                        m.Result = (IntPtr)HTTOPLEFT;
+                    else if (pos.Y >= this.ClientSize.Height - 1)
+                        m.Result = (IntPtr)HTBOTTOMLEFT;
+                    else
+                        m.Result = (IntPtr)HTLEFT;
+                }
+                else if (pos.X >= this.ClientSize.Width - 1)
+                {
+                    if (pos.Y <= 1)
+                        m.Result = (IntPtr)HTTOPRIGHT;
+                    else if (pos.Y >= this.ClientSize.Height - 1)
+                        m.Result = (IntPtr)HTBOTTOMRIGHT;
+                    else
+                        m.Result = (IntPtr)HTRIGHT;
+                }
+                else if (pos.Y <= 1)
+                {
+                    m.Result = (IntPtr)HTTOP;
+                }
+                else if (pos.Y >= this.ClientSize.Height - 1)
+                {
+                    m.Result = (IntPtr)HTBOTTOM;
+                }
+                else
+                {
+                    // 非边界区域可拖动
+                    m.Result = (IntPtr)HTCAPTION;
+                }
+            }
+        }
+
+    
         private void Seliware_MessageReceived(object sender, MessageEventArgs e,string messageJson)
         {
             try
@@ -67,16 +129,20 @@ logserv.MessageOut:Connect(function(output, OutputType)
         messageType = 'error'
     elseif OutputType == Enum.MessageType.MessageWarning then
         messageType = 'warning'
+    end
     local jdata = game:GetService('HttpService'):JSONEncode({type = 'console_message',text = output,messageType = messageType})
     ws:Send(jdata)
 end)
         ";
             string un = System.Environment.UserName;
-            string pt = "C:\\Users\\" + un + "\\AppData\\Local\\seliware-autoexec\\console.lua";
+            string pt = "C:\\Users\\" + un + "\\AppData\\Local\\seliware-autoexec\\AAA_console.lua";
             if (!File.Exists(pt))
             {
                 File.WriteAllText(pt,luaCode);
+                return;
             }
+            File.Delete(pt);
+            File.WriteAllText(pt,luaCode);
         }
         private WebView2 _webView;
         private string _scriptsFolder;
@@ -121,6 +187,12 @@ end)
             LoadSettings();
             SendCurrentSettings();
             mf();
+            this.FormBorderStyle = FormBorderStyle.None;
+            // 启用双缓冲减少闪烁
+            this.DoubleBuffered = true;
+            // 允许调整大小
+            this.ResizeRedraw = true;
+        
         }
 
         private void InitializeWebSocketServer()
@@ -658,7 +730,25 @@ powershell -Command """"""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPat
         }
 
         private void InjectSeliware()
-        {
+        {               
+            string[] processNames = { "RobloxPlayerBeta", "Roblox", "RobloxGameClient" };
+            bool processFound = false;
+                
+            foreach (var name in processNames)
+            {
+                Process[] processes = Process.GetProcessesByName(name);
+                if (processes.Length > 0)
+                {
+                    processFound = true;
+                    break;
+                }
+            }
+
+            if (!processFound)
+            {
+                SendInjectionResult(true, "Failed to Inject : No process found");
+                return;
+            }
             try
             {
                 

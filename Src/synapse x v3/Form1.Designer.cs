@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace SynapseUI
 {
     partial class MainForm
@@ -30,7 +32,7 @@ namespace SynapseUI
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Synapse UI";
             this.ResumeLayout(false);
-
+            this.Icon = new Icon("SynapseIcon.ico");
         }
     }
 }
