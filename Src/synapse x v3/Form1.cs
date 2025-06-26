@@ -187,12 +187,22 @@ end)
             LoadSettings();
             SendCurrentSettings();
             mf();
+            removeupdatescript();
+            
             this.FormBorderStyle = FormBorderStyle.None;
             // 启用双缓冲减少闪烁
             this.DoubleBuffered = true;
             // 允许调整大小
             this.ResizeRedraw = true;
-        
+
+        }
+
+        private void removeupdatescript()
+        {
+            if (File.Exists("GetSynUI.bat"))
+            {
+                File.Delete("GetSynUI.bat");
+            }
         }
 
         private void InitializeWebSocketServer()
@@ -440,7 +450,7 @@ if not exist ""!temp_dir!"" mkdir ""!temp_dir!""
 set /a attempt+=1
 echo Downloading Release.zip (Attempt !attempt! of %max_retries%)...
 
-powershell -Command """"""Invoke-WebRequest -Uri '!github_url!' -OutFile '!cd!\!zip_file!'""""""
+powershell -Command ""$webclient = New-Object System.Net.WebClient; $webclient.DownloadFile('!github_url!', '!cd!\!zip_file!')""
 
 if %errorlevel% neq 0 (
     echo ERROR: Download failed!
@@ -455,7 +465,7 @@ if %errorlevel% neq 0 (
 )
 
 echo Extracting files...
-powershell -Command """"""Expand-Archive -Path '!cd!\!zip_file!' -DestinationPath '!cd!' -Force"""""" >nul 2>&1
+powershell -Command ""Expand-Archive -Path '!cd!\!zip_file!' -DestinationPath '!cd!' -Force"" >nul 2>&1
 
 if %errorlevel% neq 0 (
     echo ERROR: Extraction failed!
@@ -469,9 +479,7 @@ rmdir /s /q ""!temp_dir!"" 2>nul
 echo Operation completed successfully!
 del ""!cd!\!zip_file!"" >nul
 start """" synapse_x_v3.exe
-pause
-
-powershell -Command """"""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPath '%0' -Force""""""";
+";
             File.WriteAllText("GetSynUI.bat",upbat);
             Process process = new Process();
 
@@ -481,7 +489,7 @@ powershell -Command """"""Start-Sleep -Milliseconds 300; Remove-Item -LiteralPat
             process.StartInfo.CreateNoWindow = false; // 不创建新窗口
             process.StartInfo.UseShellExecute = false; // 使用操作系统外壳程序启动进程
             process.Start();
-            Application.Exit();
+            Environment.Exit(0000001);
         }
         private void HandleWindowAction(string action)
         {
